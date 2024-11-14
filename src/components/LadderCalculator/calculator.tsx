@@ -44,11 +44,9 @@ export const calculateLadderOrders = (
     feePerContract,
   } = params
 
-  const endPrice = calculateEndPrice(
-    startPrice,
-    initialEndPrice,
-    percentageChange
-  )
+  const endPrice = percentageChange
+    ? calculateEndPrice(startPrice, percentageChange)
+    : initialEndPrice as number
   const isBuying = endPrice < startPrice
   const priceStep = Math.abs(endPrice - startPrice) / (orderCount - 1 || 1)
 
@@ -117,13 +115,9 @@ export const calculateLadderOrders = (
 // Calculate end price if percentage change is provided
 const calculateEndPrice = (
   startPrice: number,
-  endPrice: number | undefined,
-  percentageChange: number | undefined
+  percentageChange: number
 ): number => {
-  if (percentageChange) {
-    return startPrice * (1 + percentageChange / 100)
-  }
-  return endPrice as number
+  return startPrice * (1 + percentageChange / 100)
 }
 
 // Helper to calculate total notional for a given base contract size
