@@ -44,9 +44,13 @@ export const calculateLadderOrders = (
     feePerContract,
   } = params
 
-  const endPrice = calculateEndPrice(startPrice, initialEndPrice, percentageChange)
+  const endPrice = calculateEndPrice(
+    startPrice,
+    initialEndPrice,
+    percentageChange
+  )
   const isBuying = endPrice < startPrice
-  const priceStep = (endPrice - startPrice) / (orderCount - 1 || 1)
+  const priceStep = Math.abs(endPrice - startPrice) / (orderCount - 1 || 1)
 
   // Find the best contract size for each order to approximate target notional value
   const bestContracts = findBestContracts({
@@ -145,9 +149,8 @@ const calculateTotalNotional = (
   let totalNotional = 0
 
   for (let i = 0; i < orderCount; i++) {
-    const price = isBuying
-      ? startPrice - i * priceStep
-      : startPrice + i * priceStep
+    const step = i * priceStep
+    const price = isBuying ? startPrice - step : startPrice + step
     const contracts =
       scalingType === "equal"
         ? baseContracts
@@ -220,9 +223,9 @@ const calculateOrderDetails = ({
   feePerContract: number
   orderCount: number
 }): OrderDetail => {
-  const price = isBuying
-    ? startPrice - index * priceStep
-    : startPrice + index * priceStep
+  const step = index * priceStep
+  const price = isBuying ? startPrice - step : startPrice + step
+
   const contracts =
     scalingType === "equal"
       ? bestContracts

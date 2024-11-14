@@ -28,8 +28,8 @@ import type { LadderOrderParams, LadderOrderResult } from "./calculator"
 export function LadderCalculator() {
   const [params, setParams] = useState<LadderOrderParams>({
     startPrice: 3000,
-    endPrice: 250,
-    percentageChange: 16.66,
+    endPrice: 2500,
+    percentageChange: 10,
     orderCount: 5,
     scalingType: "equal",
     targetNotionalValue: 50000,
