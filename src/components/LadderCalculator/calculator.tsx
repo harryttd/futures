@@ -3,7 +3,6 @@ export interface LadderOrderParams {
   endPrice?: number
   percentageChange?: number
   orderCount: number
-  direction: "buy" | "sell"
   scalingType: "equal" | "linear"
   targetNotionalValue: number
   contractMultiplier: number
@@ -38,7 +37,6 @@ export const calculateLadderOrders = (
     endPrice: initialEndPrice,
     percentageChange,
     orderCount,
-    direction,
     scalingType,
     targetNotionalValue,
     contractMultiplier,
@@ -46,13 +44,8 @@ export const calculateLadderOrders = (
     feePerContract,
   } = params
 
-  const isBuying = direction === "buy"
-  const endPrice = calculateEndPrice(
-    startPrice,
-    initialEndPrice,
-    percentageChange,
-    isBuying
-  )
+  const endPrice = calculateEndPrice(startPrice, initialEndPrice, percentageChange)
+  const isBuying = endPrice < startPrice
   const priceStep = (endPrice - startPrice) / (orderCount - 1 || 1)
 
   // Find the best contract size for each order to approximate target notional value
@@ -121,11 +114,10 @@ export const calculateLadderOrders = (
 const calculateEndPrice = (
   startPrice: number,
   endPrice: number | undefined,
-  percentageChange: number | undefined,
-  isBuying: boolean
+  percentageChange: number | undefined
 ): number => {
   if (percentageChange) {
-    return startPrice * (1 + (percentageChange / 100) * (isBuying ? -1 : 1))
+    return startPrice * (1 + percentageChange / 100)
   }
   return endPrice as number
 }
@@ -266,16 +258,16 @@ const calculateAveragePercentDifference = (
   return percentDiffSum / (orderCount - 1 || 1)
 }
 
-const result = calculateLadderOrders({
-  startPrice: 3000,
-  percentageChange: 16.66666,
-  orderCount: 8,
-  direction: "buy",
-  scalingType: "equal",
-  targetNotionalValue: 50000,
-  contractMultiplier: 0.1,
-  leverage: 5,
-  feePerContract: 0.2,
-})
+// const result = calculateLadderOrders({
+//   startPrice: 3000,
+//   percentageChange: 16.66666,
+//   orderCount: 8,
+//   // direction: "buy",
+//   scalingType: "equal",
+//   targetNotionalValue: 50000,
+//   contractMultiplier: 0.1,
+//   leverage: 5,
+//   feePerContract: 0.2,
+// })
 
-console.log(result)
+// console.log(result)

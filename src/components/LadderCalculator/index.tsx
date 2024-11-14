@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+
 import {
   Select,
   SelectContent,
@@ -31,7 +31,6 @@ export function LadderCalculator() {
     endPrice: 250,
     percentageChange: 16.66,
     orderCount: 5,
-    direction: "buy",
     scalingType: "equal",
     targetNotionalValue: 50000,
     contractMultiplier: 0.1,
@@ -134,24 +133,6 @@ export function LadderCalculator() {
                   handleInputChange("orderCount", parseInt(e.target.value))
                 }
               />
-            </div>
-            <div>
-              <Label>Order Type</Label>
-              <RadioGroup
-                value={params.direction}
-                onValueChange={(value: "buy" | "sell") =>
-                  handleInputChange("direction", value)
-                }
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="buy" id="buy" />
-                  <Label htmlFor="buy">Buy Long</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="sell" id="sell" />
-                  <Label htmlFor="sell">Sell Short</Label>
-                </div>
-              </RadioGroup>
             </div>
             <div>
               <Label>Scaling Type</Label>
