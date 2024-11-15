@@ -17,6 +17,7 @@ interface OrderDetail {
   notionalValue: string
   marginRequired: string
   fees: string
+  percentDiff?: string
 }
 
 export interface LadderOrderResult {
@@ -233,7 +234,7 @@ const calculateOrderDetails = ({
   const marginRequired = notionalValue / leverage
   const fees = contracts * feePerContract
 
-  return {
+  const orderDetail: OrderDetail = {
     order: index + 1,
     price: price.toFixed(2),
     contracts,
@@ -241,6 +242,14 @@ const calculateOrderDetails = ({
     marginRequired: marginRequired.toFixed(2),
     fees: fees.toFixed(2),
   }
+
+  if (index > 0) {
+    const prevPrice = isBuying ? price + priceStep : price - priceStep;
+    const percentDiff = calculatePercentDifference(prevPrice, price);
+    orderDetail.percentDiff = percentDiff.toFixed(2);
+  }
+
+  return orderDetail;
 }
 
 // Calculate percent difference between consecutive orders

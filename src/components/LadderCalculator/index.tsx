@@ -231,6 +231,7 @@ export function LadderCalculator() {
                     <TableHead>Notional Value</TableHead>
                     <TableHead>~Margin Required</TableHead>
                     <TableHead>Fees</TableHead>
+                    <TableHead>Price % Diff</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -242,21 +243,22 @@ export function LadderCalculator() {
                       <TableCell>{order.notionalValue}</TableCell>
                       <TableCell>{order.marginRequired}</TableCell>
                       <TableCell>{order.fees}</TableCell>
+                      <TableCell>{order.percentDiff ? `${order.percentDiff}%` : '-'}</TableCell>
                     </TableRow>
                   ))}
                   <TableRow className="font-bold">
-                    <TableCell colSpan={2}>Totals</TableCell>
+                    <TableCell colSpan={3}>Totals</TableCell>
                     <TableCell>{result.totalContractsPurchased}</TableCell>
                     <TableCell>{result.totalNotionalValue}</TableCell>
                     <TableCell>{result.totalMarginRequired}</TableCell>
                     <TableCell>{result.totalFees}</TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell colSpan={5}>Average % Difference</TableCell>
+                    <TableCell colSpan={4}>Average Price Diff</TableCell>
                     <TableCell>{result.avgPercentDiff}%</TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell colSpan={5}>Break-even Price</TableCell>
+                    <TableCell colSpan={4}>Break-even Price</TableCell>
                     <TableCell>{result.breakEvenPrice}</TableCell>
                   </TableRow>
                 </TableBody>
