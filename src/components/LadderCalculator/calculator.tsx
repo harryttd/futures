@@ -26,6 +26,7 @@ export interface LadderOrderResult {
   avgPercentDiff: string
   totalContractsPurchased: number
   totalFees: string
+  breakEvenPrice: string
 }
 
 // Main function to calculate ladder orders
@@ -102,6 +103,8 @@ export const calculateLadderOrders = (
     orderCount
   )
 
+  const breakEvenPrice = calculateBreakEvenPrice(orders, totalContractsPurchased);
+
   return {
     orders,
     totalNotionalValue: totalNotionalValue.toFixed(2),
@@ -109,6 +112,7 @@ export const calculateLadderOrders = (
     avgPercentDiff: avgPercentDiff.toFixed(2),
     totalContractsPurchased,
     totalFees: totalFees.toFixed(2),
+    breakEvenPrice: breakEvenPrice.toFixed(2),
   }
 }
 
@@ -247,7 +251,17 @@ const calculatePercentDifference = (
   return (Math.abs(currentPrice - previousPrice) / previousPrice) * 100
 }
 
-// Calculate the average percent difference across all orders
+
+// Calculate the weighted average break-even price across all orders
+const calculateBreakEvenPrice = (
+  orders: OrderDetail[],
+  totalContractsPurchased: number
+): number => {
+  return orders.reduce((acc, order) => {
+    return acc + (parseFloat(order.price) * order.contracts);
+  }, 0) / totalContractsPurchased;
+}
+
 const calculateAveragePercentDifference = (
   percentDiffSum: number,
   orderCount: number

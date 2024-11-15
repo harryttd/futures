@@ -229,7 +229,7 @@ export function LadderCalculator() {
                     <TableHead>Price</TableHead>
                     <TableHead>Contracts</TableHead>
                     <TableHead>Notional Value</TableHead>
-                    <TableHead>Margin Required</TableHead>
+                    <TableHead>~Margin Required</TableHead>
                     <TableHead>Fees</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -254,6 +254,10 @@ export function LadderCalculator() {
                   <TableRow>
                     <TableCell colSpan={5}>Average % Difference</TableCell>
                     <TableCell>{result.avgPercentDiff}%</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell colSpan={5}>Break-even Price</TableCell>
+                    <TableCell>{result.breakEvenPrice}</TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
