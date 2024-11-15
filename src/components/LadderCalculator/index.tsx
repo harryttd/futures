@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { ModeToggle } from "@/components/ui/mode-toggle"
 
 import {
   Select,
@@ -78,9 +79,14 @@ export function LadderCalculator() {
 
   return (
     <div className="container mx-auto p-4 space-y-6">
-      <h1 className="text-3xl font-bold mb-6">
-        Trading Ladder Order Calculator
-      </h1>
+      <div className="flex flex-col items-center mb-6 relative">
+        <h1 className="text-3xl font-bold text-center mb-4">
+          Trading Ladder Order Calculator
+        </h1>
+        <div className="absolute right-0 top-0">
+          <ModeToggle />
+        </div>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -230,7 +236,7 @@ export function LadderCalculator() {
                     <TableHead>Contracts</TableHead>
                     <TableHead>Notional Value</TableHead>
                     <TableHead>~Margin Required</TableHead>
-                    <TableHead>Fees</TableHead>
+                    <TableHead>~Fees</TableHead>
                     <TableHead>Price % Diff</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -247,18 +253,15 @@ export function LadderCalculator() {
                     </TableRow>
                   ))}
                   <TableRow className="font-bold">
-                    <TableCell colSpan={3}>Totals</TableCell>
+                    <TableCell colSpan={2}>Totals</TableCell>
                     <TableCell>{result.totalContractsPurchased}</TableCell>
                     <TableCell>{result.totalNotionalValue}</TableCell>
-                    <TableCell>{result.totalMarginRequired}</TableCell>
-                    <TableCell>{result.totalFees}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell colSpan={4}>Average Price Diff</TableCell>
+                    <TableCell>~{result.totalMarginRequired}</TableCell>
+                    <TableCell>~{result.totalFees}</TableCell>
                     <TableCell>{result.avgPercentDiff}%</TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell colSpan={4}>Break-even Price</TableCell>
+                    <TableCell colSpan={2}>Break-even Price</TableCell>
                     <TableCell>{result.breakEvenPrice}</TableCell>
                   </TableRow>
                 </TableBody>
