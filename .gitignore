@@ -1,5 +1,6 @@
 .aider*
 .env*
+cdp_api_key.json
 
 # Logs
 logs

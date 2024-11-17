@@ -48,7 +48,7 @@ export const calculateLadderOrders = (
 
   const endPrice = percentageChange
     ? calculateEndPrice(startPrice, percentageChange)
-    : initialEndPrice as number
+    : (initialEndPrice as number)
   const isBuying = endPrice < startPrice
   const priceStep = Math.abs(endPrice - startPrice) / (orderCount - 1 || 1)
 
@@ -104,7 +104,10 @@ export const calculateLadderOrders = (
     orderCount
   )
 
-  const breakEvenPrice = calculateBreakEvenPrice(orders, totalContractsPurchased);
+  const breakEvenPrice = calculateBreakEvenPrice(
+    orders,
+    totalContractsPurchased
+  )
 
   return {
     orders,
@@ -228,7 +231,7 @@ const calculateOrderDetails = ({
   const contracts =
     scalingType === "equal"
       ? bestContracts
-      : Math.floor((bestContracts * (index + 1)) / orderCount)
+      : Math.max(1, Math.round((bestContracts * (index + 1)) / orderCount))
 
   const notionalValue = price * contracts * contractMultiplier
   const marginRequired = notionalValue / leverage
@@ -244,12 +247,12 @@ const calculateOrderDetails = ({
   }
 
   if (index > 0) {
-    const prevPrice = isBuying ? price + priceStep : price - priceStep;
-    const percentDiff = calculatePercentDifference(prevPrice, price);
-    orderDetail.percentDiff = percentDiff.toFixed(2);
+    const prevPrice = isBuying ? price + priceStep : price - priceStep
+    const percentDiff = calculatePercentDifference(prevPrice, price)
+    orderDetail.percentDiff = percentDiff.toFixed(2)
   }
 
-  return orderDetail;
+  return orderDetail
 }
 
 // Calculate percent difference between consecutive orders
@@ -260,15 +263,16 @@ const calculatePercentDifference = (
   return (Math.abs(currentPrice - previousPrice) / previousPrice) * 100
 }
 
-
 // Calculate the weighted average break-even price across all orders
 const calculateBreakEvenPrice = (
   orders: OrderDetail[],
   totalContractsPurchased: number
 ): number => {
-  return orders.reduce((acc, order) => {
-    return acc + (parseFloat(order.price) * order.contracts);
-  }, 0) / totalContractsPurchased;
+  return (
+    orders.reduce((acc, order) => {
+      return acc + parseFloat(order.price) * order.contracts
+    }, 0) / totalContractsPurchased
+  )
 }
 
 const calculateAveragePercentDifference = (
