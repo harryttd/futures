@@ -31,7 +31,7 @@ export function LadderCalculator() {
     startPrice: 3000,
     endPrice: 2500,
     percentageChange: -13.33,
-    orderCount: 5,
+    totalOrders: 5,
     priceScale: "equal",
     targetNotionalValue: 20000,
     contractMultiplier: 0.1,
@@ -129,14 +129,14 @@ export function LadderCalculator() {
               />
             </div>
             <div>
-              <Label htmlFor="orderCount">Number of Orders</Label>
+              <Label htmlFor="totalOrders">Number of Orders</Label>
               <Input
-                id="orderCount"
+                id="totalOrders"
                 type="number"
                 min="1"
-                value={params.orderCount}
+                value={params.totalOrders}
                 onChange={(e) =>
-                  handleInputChange("orderCount", parseInt(e.target.value))
+                  handleInputChange("totalOrders", parseInt(e.target.value))
                 }
               />
             </div>

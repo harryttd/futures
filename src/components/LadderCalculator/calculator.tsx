@@ -4,7 +4,7 @@ export interface LadderOrderParams {
   startPrice: number
   endPrice?: number
   percentageChange?: number
-  orderCount: number
+  totalOrders: number
   priceScale: PriceScale
   targetNotionalValue: number
   contractMultiplier: number
@@ -23,23 +23,29 @@ interface OrderDetail {
 }
 
 const calculateContractsForOrder = ({
-  index,
+  orderNumber,
   bestContracts,
-  orderCount,
+  totalOrders,
   priceScale,
 }: {
-  index: number
+  orderNumber: number
   bestContracts: number
-  orderCount: number
+  totalOrders: number
   priceScale: PriceScale
 }): number => {
   switch (priceScale) {
     case "equal":
       return bestContracts
     case "linear":
-      return Math.max(1, Math.round((bestContracts * (index + 1)) / orderCount))
+      return Math.max(
+        1,
+        Math.round((bestContracts * (orderNumber + 1)) / totalOrders)
+      )
     case "reverse-linear":
-      return Math.max(1, Math.round((bestContracts * (orderCount - index)) / orderCount))
+      return Math.max(
+        1,
+        Math.round((bestContracts * (totalOrders - orderNumber)) / totalOrders)
+      )
     default:
       return bestContracts
   }
@@ -63,7 +69,7 @@ export const calculateLadderOrders = (
     startPrice,
     endPrice: initialEndPrice,
     percentageChange,
-    orderCount,
+    totalOrders,
     priceScale,
     targetNotionalValue,
     contractMultiplier,
@@ -75,13 +81,13 @@ export const calculateLadderOrders = (
     ? calculateEndPrice(startPrice, percentageChange)
     : (initialEndPrice as number)
   const isBuying = endPrice < startPrice
-  const priceStep = Math.abs(endPrice - startPrice) / (orderCount - 1 || 1)
+  const priceStep = Math.abs(endPrice - startPrice) / (totalOrders - 1 || 1)
 
   // Find the best contract size for each order to approximate target notional value
   const bestContracts = findBestContracts({
     startPrice,
     priceStep,
-    orderCount,
+    totalOrders,
     isBuying,
     priceScale,
     targetNotionalValue,
@@ -96,9 +102,9 @@ export const calculateLadderOrders = (
   let totalFees = 0
   let percentDiffSum = 0
 
-  for (let i = 0; i < orderCount; i++) {
+  for (let orderNumber = 0; orderNumber < totalOrders; orderNumber++) {
     const order = calculateOrderDetails({
-      index: i,
+      orderNumber,
       startPrice,
       priceStep,
       bestContracts,
@@ -107,7 +113,7 @@ export const calculateLadderOrders = (
       contractMultiplier,
       leverage,
       feePerContract,
-      orderCount,
+      totalOrders,
     })
 
     orders.push(order)
@@ -116,9 +122,9 @@ export const calculateLadderOrders = (
     totalContractsPurchased += order.contracts
     totalFees += parseFloat(order.fees)
 
-    if (i > 0) {
+    if (orderNumber > 0) {
       percentDiffSum += calculatePercentDifference(
-        parseFloat(orders[i - 1].price),
+        parseFloat(orders[orderNumber - 1].price),
         parseFloat(order.price)
       )
     }
@@ -126,7 +132,7 @@ export const calculateLadderOrders = (
 
   const avgPercentDiff = calculateAveragePercentDifference(
     percentDiffSum,
-    orderCount
+    totalOrders
   )
 
   const breakEvenPrice = calculateBreakEvenPrice(
@@ -159,7 +165,7 @@ const calculateTotalNotional = (
   params: {
     startPrice: number
     priceStep: number
-    orderCount: number
+    totalOrders: number
     isBuying: boolean
     priceScale: PriceScale
     contractMultiplier: number
@@ -168,21 +174,21 @@ const calculateTotalNotional = (
   const {
     startPrice,
     priceStep,
-    orderCount,
+    totalOrders,
     isBuying,
     priceScale,
     contractMultiplier,
   } = params
   let totalNotional = 0
 
-  for (let i = 0; i < orderCount; i++) {
-    const step = i * priceStep
+  for (let orderNumber = 0; orderNumber < totalOrders; orderNumber++) {
+    const step = orderNumber * priceStep
     const price = isBuying ? startPrice - step : startPrice + step
     const contracts = calculateContractsForOrder({
-      index: i,
+      orderNumber,
       bestContracts: baseContracts,
-      orderCount,
-      priceScale
+      totalOrders,
+      priceScale,
     })
 
     totalNotional += price * contracts * contractMultiplier
@@ -194,7 +200,7 @@ const calculateTotalNotional = (
 const findBestContracts = (params: {
   startPrice: number
   priceStep: number
-  orderCount: number
+  totalOrders: number
   isBuying: boolean
   priceScale: PriceScale
   targetNotionalValue: number
@@ -230,7 +236,7 @@ const findBestContracts = (params: {
 
 // Calculate details for each order in the ladder
 const calculateOrderDetails = ({
-  index,
+  orderNumber,
   startPrice,
   priceStep,
   bestContracts,
@@ -239,9 +245,9 @@ const calculateOrderDetails = ({
   contractMultiplier,
   leverage,
   feePerContract,
-  orderCount,
+  totalOrders,
 }: {
-  index: number
+  orderNumber: number
   startPrice: number
   priceStep: number
   bestContracts: number
@@ -250,16 +256,16 @@ const calculateOrderDetails = ({
   contractMultiplier: number
   leverage: number
   feePerContract: number
-  orderCount: number
+  totalOrders: number
 }): OrderDetail => {
-  const step = index * priceStep
+  const step = orderNumber * priceStep
   const price = isBuying ? startPrice - step : startPrice + step
 
   const contracts = calculateContractsForOrder({
-    index,
+    orderNumber,
     bestContracts,
-    orderCount,
-    priceScale
+    totalOrders,
+    priceScale,
   })
 
   const notionalValue = price * contracts * contractMultiplier
@@ -267,7 +273,7 @@ const calculateOrderDetails = ({
   const fees = contracts * feePerContract
 
   const orderDetail: OrderDetail = {
-    order: index + 1,
+    order: orderNumber + 1,
     price: price.toFixed(2),
     contracts,
     notionalValue: notionalValue.toFixed(2),
@@ -275,7 +281,7 @@ const calculateOrderDetails = ({
     fees: fees.toFixed(2),
   }
 
-  if (index > 0) {
+  if (orderNumber > 0) {
     const prevPrice = isBuying ? price + priceStep : price - priceStep
     const percentDiff = calculatePercentDifference(prevPrice, price)
     orderDetail.percentDiff = percentDiff.toFixed(2)
@@ -306,15 +312,15 @@ const calculateBreakEvenPrice = (
 
 const calculateAveragePercentDifference = (
   percentDiffSum: number,
-  orderCount: number
+  totalOrders: number
 ): number => {
-  return percentDiffSum / (orderCount - 1 || 1)
+  return percentDiffSum / (totalOrders - 1 || 1)
 }
 
 // const result = calculateLadderOrders({
 //   startPrice: 3000,
 //   percentageChange: 16.66666,
-//   orderCount: 8,
+//   totalOrders: 8,
 //   // direction: "buy",
 //   priceScale: "equal",
 //   targetNotionalValue: 50000,
