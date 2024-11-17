@@ -1,9 +1,11 @@
+export type PriceScale = "equal" | "linear" | "reverse-linear"
+
 export interface LadderOrderParams {
   startPrice: number
   endPrice?: number
   percentageChange?: number
   orderCount: number
-  scalingType: "equal" | "linear"
+  priceScale: PriceScale
   targetNotionalValue: number
   contractMultiplier: number
   leverage: number
@@ -18,6 +20,29 @@ interface OrderDetail {
   marginRequired: string
   fees: string
   percentDiff?: string
+}
+
+const calculateContractsForOrder = ({
+  index,
+  bestContracts,
+  orderCount,
+  priceScale,
+}: {
+  index: number
+  bestContracts: number
+  orderCount: number
+  priceScale: PriceScale
+}): number => {
+  switch (priceScale) {
+    case "equal":
+      return bestContracts
+    case "linear":
+      return Math.max(1, Math.round((bestContracts * (index + 1)) / orderCount))
+    case "reverse-linear":
+      return Math.max(1, Math.round((bestContracts * (orderCount - index)) / orderCount))
+    default:
+      return bestContracts
+  }
 }
 
 export interface LadderOrderResult {
@@ -39,7 +64,7 @@ export const calculateLadderOrders = (
     endPrice: initialEndPrice,
     percentageChange,
     orderCount,
-    scalingType,
+    priceScale,
     targetNotionalValue,
     contractMultiplier,
     leverage,
@@ -58,7 +83,7 @@ export const calculateLadderOrders = (
     priceStep,
     orderCount,
     isBuying,
-    scalingType,
+    priceScale,
     targetNotionalValue,
     contractMultiplier,
   })
@@ -78,7 +103,7 @@ export const calculateLadderOrders = (
       priceStep,
       bestContracts,
       isBuying,
-      scalingType,
+      priceScale,
       contractMultiplier,
       leverage,
       feePerContract,
@@ -136,7 +161,7 @@ const calculateTotalNotional = (
     priceStep: number
     orderCount: number
     isBuying: boolean
-    scalingType: "equal" | "linear"
+    priceScale: PriceScale
     contractMultiplier: number
   }
 ): number => {
@@ -145,7 +170,7 @@ const calculateTotalNotional = (
     priceStep,
     orderCount,
     isBuying,
-    scalingType,
+    priceScale,
     contractMultiplier,
   } = params
   let totalNotional = 0
@@ -153,10 +178,12 @@ const calculateTotalNotional = (
   for (let i = 0; i < orderCount; i++) {
     const step = i * priceStep
     const price = isBuying ? startPrice - step : startPrice + step
-    const contracts =
-      scalingType === "equal"
-        ? baseContracts
-        : Math.floor((baseContracts * (i + 1)) / orderCount)
+    const contracts = calculateContractsForOrder({
+      index: i,
+      bestContracts: baseContracts,
+      orderCount,
+      priceScale
+    })
 
     totalNotional += price * contracts * contractMultiplier
   }
@@ -169,7 +196,7 @@ const findBestContracts = (params: {
   priceStep: number
   orderCount: number
   isBuying: boolean
-  scalingType: "equal" | "linear"
+  priceScale: PriceScale
   targetNotionalValue: number
   contractMultiplier: number
 }): number => {
@@ -208,7 +235,7 @@ const calculateOrderDetails = ({
   priceStep,
   bestContracts,
   isBuying,
-  scalingType,
+  priceScale,
   contractMultiplier,
   leverage,
   feePerContract,
@@ -219,7 +246,7 @@ const calculateOrderDetails = ({
   priceStep: number
   bestContracts: number
   isBuying: boolean
-  scalingType: "equal" | "linear"
+  priceScale: PriceScale
   contractMultiplier: number
   leverage: number
   feePerContract: number
@@ -228,10 +255,12 @@ const calculateOrderDetails = ({
   const step = index * priceStep
   const price = isBuying ? startPrice - step : startPrice + step
 
-  const contracts =
-    scalingType === "equal"
-      ? bestContracts
-      : Math.max(1, Math.round((bestContracts * (index + 1)) / orderCount))
+  const contracts = calculateContractsForOrder({
+    index,
+    bestContracts,
+    orderCount,
+    priceScale
+  })
 
   const notionalValue = price * contracts * contractMultiplier
   const marginRequired = notionalValue / leverage
@@ -287,7 +316,7 @@ const calculateAveragePercentDifference = (
 //   percentageChange: 16.66666,
 //   orderCount: 8,
 //   // direction: "buy",
-//   scalingType: "equal",
+//   priceScale: "equal",
 //   targetNotionalValue: 50000,
 //   contractMultiplier: 0.1,
 //   leverage: 5,

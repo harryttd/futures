@@ -24,16 +24,16 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 
 import { calculateLadderOrders } from "./calculator"
-import type { LadderOrderParams, LadderOrderResult } from "./calculator"
+import type { LadderOrderParams, LadderOrderResult, PriceScale } from "./calculator"
 
 export function LadderCalculator() {
   const [params, setParams] = useState<LadderOrderParams>({
     startPrice: 3000,
     endPrice: 2500,
-    percentageChange: 10,
+    percentageChange: -13.33,
     orderCount: 5,
-    scalingType: "equal",
-    targetNotionalValue: 50000,
+    priceScale: "equal",
+    targetNotionalValue: 20000,
     contractMultiplier: 0.1,
     leverage: 5,
     feePerContract: 0.2,
@@ -143,9 +143,9 @@ export function LadderCalculator() {
             <div>
               <Label>Scaling Type</Label>
               <Select
-                value={params.scalingType}
-                onValueChange={(value: "equal" | "linear") =>
-                  handleInputChange("scalingType", value)
+                value={params.priceScale}
+                onValueChange={(value: PriceScale) =>
+                  handleInputChange("priceScale", value)
                 }
               >
                 <SelectTrigger>
@@ -154,6 +154,7 @@ export function LadderCalculator() {
                 <SelectContent>
                   <SelectItem value="equal">Equal</SelectItem>
                   <SelectItem value="linear">Linear</SelectItem>
+                  <SelectItem value="reverse-linear">Reverse Linear</SelectItem>
                 </SelectContent>
               </Select>
             </div>
