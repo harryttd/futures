@@ -24,9 +24,106 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 
 import { calculateLadderOrders } from "./calculator"
-import type { LadderOrderParams, LadderOrderResult, PriceScale } from "./calculator"
+import type {
+  LadderOrderParams,
+  LadderOrderResult,
+  PriceScale,
+} from "./calculator"
+import { useEffect } from "react"
+import { BrowserRESTClient } from "@coinbase/sdk"
+
+const useWebSocket = () => {
+  useEffect(() => {
+    (async () => {
+      await new BrowserRESTClient()
+        .getOrder({ orderId: "f527e07c-c9e1-4099-a49f-7a8d485e1938" })
+        .then((result) => {
+          console.dir(result)
+        })
+        .catch((error) => {
+          console.error(error)
+        })
+    })()
+    // const connectWebSocket = async () => {
+    //   try {
+    //     // Get JWT token from backend
+    //     const response = await fetch('http://localhost:5174/proxy/auth')
+    //     const { token } = await response.json()
+    //     const client = new RESTClient(undefined, undefined, true)
+    //      await client
+    //  .getOrder({ orderId: "f527e07c-c9e1-4099-a49f-7a8d485e1938" })
+    //  .then((result) => {
+    //    console.dir(result)
+    //  })
+    //  .catch((error) => {
+    //    console.error(error)
+    //  })
+
+    //     // Connect to Coinbase WebSocket with token
+    //     const ws = new window.WebSocket('wss://advanced-trade-ws.coinbase.com')
+
+    //     ws.onopen = () => {
+    //       // Subscribe to futures products
+    //       // ws.send(
+    //       //   JSON.stringify({
+    //       //     type: "subscribe",
+    //       //     product_ids: ["ETH-USD", "ETH-EUR"],
+    //       //     channel: "level2",
+    //       //   })
+    //       // )
+    //       ws.send(
+    //         JSON.stringify({
+    //           type: "subscribe",
+    //           channel: "futures_balance_summary",
+    //           jwt: token,
+    //         })
+    //       )
+    //       // ws.send(
+    //       //   JSON.stringify({
+    //       //     type: "subscribe",
+    //       //     channel: "heartbeats",
+    //       //     jwt: token,
+    //       //   })
+    //       // )
+    //       // ws.send(JSON.stringify({
+    //       //   type: 'subscribe',
+    //       //   product_ids: ['*'],
+    //       //   channel: 'products',
+    //       //   jwt: token
+    //       // }))
+    //     }
+
+    //     ws.onmessage = (event: any) => {
+    //       const data = JSON.parse(event.data)
+    //       // Handle product updates
+    //       console.log(data)
+    //       if (data.channel === 'products') {
+    //         // Update product list state
+    //       }
+    //     }
+
+    //     ws.onerror = (error: any) => {
+    //       console.error('WebSocket error:', error)
+    //     }
+
+    //     ws.onclose = () => {
+    //       console.log('WebSocket connection closed')
+    //     }
+
+    //     return () => {
+    //       ws.close()
+    //     }
+    //   } catch (err) {
+    //     console.error('Error connecting to WebSocket:', err)
+    //   }
+    // }
+
+    // connectWebSocket()
+  }, [])
+}
 
 export function LadderCalculator() {
+  useWebSocket()
   const [params, setParams] = useState<LadderOrderParams>({
     startPrice: 3000,
     endPrice: 2500,
@@ -250,7 +347,9 @@ export function LadderCalculator() {
                       <TableCell>{order.notionalValue}</TableCell>
                       <TableCell>{order.marginRequired}</TableCell>
                       <TableCell>{order.fees}</TableCell>
-                      <TableCell>{order.percentDiff ? `${order.percentDiff}%` : '-'}</TableCell>
+                      <TableCell>
+                        {order.percentDiff ? `${order.percentDiff}%` : "-"}
+                      </TableCell>
                     </TableRow>
                   ))}
                   <TableRow className="font-bold">

@@ -1,0 +1,3 @@
+[submodule "coinbase-sdk"]
+	path = coinbase-sdk
+	url = ./coinbase-sdk
