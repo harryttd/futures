@@ -1,9 +1,9 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ModeToggle } from "@/components/ui/mode-toggle"
-
 import {
   Select,
   SelectContent,
@@ -23,20 +23,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 
+import { useCoinbase } from "@/lib/coinbase-context"
 import { calculateLadderOrders } from "./calculator"
 import type {
   LadderOrderParams,
   LadderOrderResult,
   PriceScale,
 } from "./calculator"
-import { useEffect } from "react"
-import { BrowserRESTClient } from "@coinbase/sdk"
 
 const useWebSocket = () => {
+  const coinbaseClient = useCoinbase()
+
   useEffect(() => {
     (async () => {
-      await new BrowserRESTClient()
-        .getOrder({ orderId: "f527e07c-c9e1-4099-a49f-7a8d485e1938" })
+      await coinbaseClient
+        .getFuturesBalanceSummary()
         .then((result) => {
           console.dir(result)
         })
@@ -44,6 +45,7 @@ const useWebSocket = () => {
           console.error(error)
         })
     })()
+
     // const connectWebSocket = async () => {
     //   try {
     //     // Get JWT token from backend
