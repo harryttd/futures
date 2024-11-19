@@ -1,4 +1,10 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
+import {
+  Product,
+  ProductType,
+  ContractExpiryType,
+  ExpiringContractStatus,
+} from "@coinbase/sdk"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -35,7 +41,7 @@ const useWebSocket = () => {
   const coinbaseClient = useCoinbase()
 
   useEffect(() => {
-    (async () => {
+    ;(async () => {
       await coinbaseClient
         .getFuturesBalanceSummary()
         .then((result) => {
@@ -125,15 +131,63 @@ const useWebSocket = () => {
 }
 
 export function LadderCalculator() {
-  useWebSocket()
+  const coinbaseClient = useCoinbase()
+  const [products, setProducts] = useState<Product[]>([])
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  const fetchProducts = useCallback(async () => {
+    try {
+      const response = await coinbaseClient.listProducts({
+        productType: ProductType.FUTURE,
+        contractExpiryType: ContractExpiryType.EXPIRING,
+        expiringContractStatus: ExpiringContractStatus.UNEXPIRED,
+      })
+      console.log(response)
+      if (response?.products) {
+        const filteredProducts = response.products.filter((p) => !p.view_only)
+        const sortedProducts = filteredProducts.sort((a, b) => {
+          // Sort by watched status (watched items first)
+          if (a.watched && !b.watched) return -1
+          if (!a.watched && b.watched) return 1
+          return 0
+        })
+        setProducts(sortedProducts)
+        if (sortedProducts.length > 0) {
+          const firstProduct = sortedProducts[0]
+          setSelectedProduct(firstProduct)
+          // Initialize params with the first product's values
+          const currentPrice = parseFloat(firstProduct.price)
+          setParams((prev) => ({
+            ...prev,
+            startPrice: currentPrice,
+            endPrice: currentPrice * 0.9,
+            contractMultiplier: parseFloat(
+              firstProduct.future_product_details?.contract_size
+            ),
+          }))
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch products:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [coinbaseClient])
+
+  useEffect(() => {
+    fetchProducts()
+  }, [fetchProducts])
+
   const [params, setParams] = useState<LadderOrderParams>({
-    startPrice: 3000,
-    endPrice: 2500,
-    percentageChange: -13.33,
+    startPrice: parseFloat(selectedProduct?.price || "0"),
+    percentageChange: -10,
     totalOrders: 5,
-    priceScale: "equal",
+    priceScale: "reverse-linear",
     targetNotionalValue: 20000,
-    contractMultiplier: 0.1,
+    contractMultiplier: parseFloat(
+      selectedProduct?.future_product_details?.contract_size || "0"
+    ),
     leverage: 5,
     feePerContract: 0.2,
   })
@@ -192,6 +246,53 @@ export function LadderCalculator() {
             <CardTitle>Input Parameters</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div>
+              <Label>Select Product</Label>
+              <Select
+                disabled={isLoading}
+                value={selectedProduct?.product_id}
+                onValueChange={(productId) => {
+                  const product = products.find(
+                    (p) => p.product_id === productId
+                  )
+                  if (product) {
+                    setSelectedProduct(product)
+                    // Update start price based on selected product
+                    const currentPrice = parseFloat(
+                      product.price || params.startPrice.toString()
+                    )
+                    handleInputChange("startPrice", currentPrice)
+                    handleInputChange(
+                      "contractMultiplier",
+                      parseFloat(
+                        product.future_product_details?.contract_size || "0"
+                      )
+                    )
+                    // Set end price to -10% of start price
+                    const newEndPrice = currentPrice * 0.9
+                    handleEndPriceChange(newEndPrice)
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      isLoading ? "Loading products..." : "Select a product"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {products.map((product) => (
+                    <SelectItem
+                      key={product.product_id}
+                      value={product.product_id}
+                    >
+                      {product.display_name || product.product_id}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="startPrice">Start Price</Label>
