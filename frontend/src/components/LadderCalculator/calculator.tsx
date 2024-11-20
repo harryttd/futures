@@ -56,8 +56,8 @@ export const calculateLadderOrders = (
   const isBuying = endPrice < startPrice
   const priceStep = Math.abs(endPrice - startPrice) / (totalOrders - 1 || 1)
 
-  // Find the best contract size for each order to approximate target notional value
-  const bestContracts = findBestContracts({
+  // Find the total contract amount to approximate target notional value
+  const totalContracts = getTotalContracts({
     startPrice,
     priceStep,
     totalOrders,
@@ -80,7 +80,7 @@ export const calculateLadderOrders = (
       orderNumber,
       startPrice,
       priceStep,
-      bestContracts,
+      totalContracts,
       isBuying,
       priceScale,
       contractMultiplier,
@@ -133,33 +133,42 @@ const calculateEndPrice = (
   return startPrice * (1 + percentageChange / 100)
 }
 
-const calculateContractsForOrder = ({
-  orderNumber,
-  bestContracts,
-  totalOrders,
-  priceScale,
-}: {
-  orderNumber: number
-  bestContracts: number
+// Use binary search to find the total contracts to approximate targetNotionalValue
+const getTotalContracts = (params: {
+  startPrice: number
+  priceStep: number
   totalOrders: number
+  isBuying: boolean
   priceScale: PriceScale
+  targetNotionalValue: number
+  contractMultiplier: number
 }): number => {
-  switch (priceScale) {
-    case "equal":
-      return bestContracts
-    case "linear":
-      return Math.max(
-        1,
-        Math.round((bestContracts * (orderNumber + 1)) / totalOrders)
-      )
-    case "reverse-linear":
-      return Math.max(
-        1,
-        Math.round((bestContracts * (totalOrders - orderNumber)) / totalOrders)
-      )
-    default:
-      return bestContracts
+  const { startPrice, contractMultiplier, targetNotionalValue } = params
+  let minContracts = 1
+  let maxContracts = Math.ceil(
+    targetNotionalValue / (startPrice * contractMultiplier)
+  )
+  let totalContracts = minContracts
+  let closestNotionalDiff = Infinity
+
+  while (minContracts <= maxContracts) {
+    const midContracts = Math.floor((minContracts + maxContracts) / 2)
+    const totalNotional = calculateTotalNotional(midContracts, params)
+    const notionalDiff = Math.abs(targetNotionalValue - totalNotional)
+
+    if (notionalDiff < closestNotionalDiff) {
+      closestNotionalDiff = notionalDiff
+      totalContracts = midContracts
+    }
+
+    if (totalNotional < targetNotionalValue) {
+      minContracts = midContracts + 1
+    } else {
+      maxContracts = midContracts - 1
+    }
   }
+
+  return totalContracts
 }
 
 // Helper to calculate total notional for a given base contract size
@@ -189,7 +198,7 @@ const calculateTotalNotional = (
     const price = isBuying ? startPrice - step : startPrice + step
     const contracts = calculateContractsForOrder({
       orderNumber,
-      bestContracts: baseContracts,
+      totalContracts: baseContracts,
       totalOrders,
       priceScale,
     })
@@ -199,68 +208,33 @@ const calculateTotalNotional = (
   return totalNotional
 }
 
-// Use binary search to find the best contracts to approximate targetNotionalValue
-const findBestContracts = (params: {
-  startPrice: number
-  priceStep: number
-  totalOrders: number
-  isBuying: boolean
-  priceScale: PriceScale
-  targetNotionalValue: number
-  contractMultiplier: number
-}): number => {
-  const { startPrice, contractMultiplier, targetNotionalValue } = params
-  let minContracts = 1
-  let maxContracts = Math.ceil(
-    targetNotionalValue / (startPrice * contractMultiplier)
-  )
-  let bestContracts = minContracts
-  let closestNotionalDiff = Infinity
-
-  while (minContracts <= maxContracts) {
-    const midContracts = Math.floor((minContracts + maxContracts) / 2)
-    const totalNotional = calculateTotalNotional(midContracts, params)
-    const notionalDiff = Math.abs(targetNotionalValue - totalNotional)
-
-    if (notionalDiff < closestNotionalDiff) {
-      closestNotionalDiff = notionalDiff
-      bestContracts = midContracts
-    }
-
-    if (totalNotional < targetNotionalValue) {
-      minContracts = midContracts + 1
-    } else {
-      maxContracts = midContracts - 1
-    }
-  }
-
-  return bestContracts
-}
-
-// Calculate price for an order considering price increment
-const calculatePrice = ({
+const calculateContractsForOrder = ({
   orderNumber,
-  startPrice,
-  priceStep,
-  isBuying,
-  priceIncrement,
+  totalContracts,
+  totalOrders,
+  priceScale,
 }: {
   orderNumber: number
-  startPrice: number
-  priceStep: number
-  isBuying: boolean
-  priceIncrement: number
-}): { price: number; precision: number } => {
-  const step = orderNumber * priceStep
-  const rawPrice = isBuying ? startPrice - step : startPrice + step
-  // Handle price calculation to conform to price increment
-  const precision =
-    priceIncrement < 1 ? -Math.floor(Math.log10(priceIncrement)) : 0
-  // Round price to nearest increment
-  const roundedPrice = Math.round(rawPrice / priceIncrement) * priceIncrement
-  // Format with appropriate decimal places
-  const price = Number(roundedPrice.toFixed(precision))
-  return { price, precision }
+  totalContracts: number
+  totalOrders: number
+  priceScale: PriceScale
+}): number => {
+  switch (priceScale) {
+    case "equal":
+      return totalContracts
+    case "linear":
+      return Math.max(
+        1,
+        Math.round((totalContracts * (orderNumber + 1)) / totalOrders)
+      )
+    case "reverse-linear":
+      return Math.max(
+        1,
+        Math.round((totalContracts * (totalOrders - orderNumber)) / totalOrders)
+      )
+    default:
+      return totalContracts
+  }
 }
 
 // Calculate details for each order in the ladder
@@ -268,7 +242,7 @@ const calculateOrderDetails = ({
   orderNumber,
   startPrice,
   priceStep,
-  bestContracts,
+  totalContracts,
   isBuying,
   priceScale,
   contractMultiplier,
@@ -280,7 +254,7 @@ const calculateOrderDetails = ({
   orderNumber: number
   startPrice: number
   priceStep: number
-  bestContracts: number
+  totalContracts: number
   isBuying: boolean
   priceScale: PriceScale
   contractMultiplier: number
@@ -299,7 +273,7 @@ const calculateOrderDetails = ({
 
   const contracts = calculateContractsForOrder({
     orderNumber,
-    bestContracts,
+    totalContracts,
     totalOrders,
     priceScale,
   })
@@ -324,6 +298,32 @@ const calculateOrderDetails = ({
   }
 
   return orderDetail
+}
+
+// Calculate price for an order using price increment
+const calculatePrice = ({
+  orderNumber,
+  startPrice,
+  priceStep,
+  isBuying,
+  priceIncrement,
+}: {
+  orderNumber: number
+  startPrice: number
+  priceStep: number
+  isBuying: boolean
+  priceIncrement: number
+}): { price: number; precision: number } => {
+  const step = orderNumber * priceStep
+  const rawPrice = isBuying ? startPrice - step : startPrice + step
+  // Handle price calculation to conform to price increment
+  const precision =
+    priceIncrement < 1 ? -Math.floor(Math.log10(priceIncrement)) : 0
+  // Round price to nearest increment
+  const roundedPrice = Math.round(rawPrice / priceIncrement) * priceIncrement
+  // Format with appropriate decimal places
+  const price = Number(roundedPrice.toFixed(precision))
+  return { price, precision }
 }
 
 // Calculate percent difference between consecutive orders
