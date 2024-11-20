@@ -147,7 +147,7 @@ export function LadderCalculator() {
         contractExpiryType: ContractExpiryType.EXPIRING,
         expiringContractStatus: ExpiringContractStatus.UNEXPIRED,
       })
-      console.log(response)
+
       if (response?.products) {
         const filteredProducts = response.products.filter((p) => !p.view_only)
         const sortedProducts = filteredProducts.sort((a, b) => {
@@ -342,14 +342,37 @@ export function LadderCalculator() {
             </div>
             <div>
               <Label htmlFor="percentageChange">Percentage Change</Label>
-              <Input
-                id="percentageChange"
-                type="number"
-                value={params.percentageChange}
-                onChange={(e) =>
-                  handlePercentageChange(parseFloat(e.target.value))
-                }
-              />
+              <div className="flex">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const currentValue = Math.abs(params.percentageChange ?? 0)
+
+                    handlePercentageChange(
+                      (params.percentageChange ?? 0) >= 0
+                        ? -currentValue
+                        : currentValue
+                    )
+                  }}
+                  className={`rounded-r-none border-r-0 w-16 mr-2 ${
+                    (params.percentageChange ?? 0) < 0 ? "bg-secondary" : ""
+                  }`}
+                >
+                  {(params.percentageChange ?? 0) < 0 ? "-" : "+"}
+                </Button>
+                <Input
+                  id="percentageChange"
+                  type="number"
+                  value={params.percentageChange}
+                  onChange={(e) => {
+                    const value = Math.abs(parseFloat(e.target.value))
+                    handlePercentageChange(
+                      (params.percentageChange ?? 0) < 0 ? -value : value
+                    )
+                  }}
+                  className="text-center"
+                />
+              </div>
             </div>
             <div>
               <Label htmlFor="totalOrders">Number of Orders</Label>
