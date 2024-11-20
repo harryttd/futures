@@ -10,6 +10,7 @@ export interface LadderOrderParams {
   contractMultiplier: number
   leverage: number
   feePerContract: number
+  priceIncrement: number
 }
 
 interface OrderDetail {
@@ -20,35 +21,6 @@ interface OrderDetail {
   marginRequired: string
   fees: string
   percentDiff?: string
-}
-
-const calculateContractsForOrder = ({
-  orderNumber,
-  bestContracts,
-  totalOrders,
-  priceScale,
-}: {
-  orderNumber: number
-  bestContracts: number
-  totalOrders: number
-  priceScale: PriceScale
-}): number => {
-  switch (priceScale) {
-    case "equal":
-      return bestContracts
-    case "linear":
-      return Math.max(
-        1,
-        Math.round((bestContracts * (orderNumber + 1)) / totalOrders)
-      )
-    case "reverse-linear":
-      return Math.max(
-        1,
-        Math.round((bestContracts * (totalOrders - orderNumber)) / totalOrders)
-      )
-    default:
-      return bestContracts
-  }
 }
 
 export interface LadderOrderResult {
@@ -75,6 +47,7 @@ export const calculateLadderOrders = (
     contractMultiplier,
     leverage,
     feePerContract,
+    priceIncrement,
   } = params
 
   const endPrice = percentageChange
@@ -114,6 +87,7 @@ export const calculateLadderOrders = (
       leverage,
       feePerContract,
       totalOrders,
+      priceIncrement,
     })
 
     orders.push(order)
@@ -157,6 +131,35 @@ const calculateEndPrice = (
   percentageChange: number
 ): number => {
   return startPrice * (1 + percentageChange / 100)
+}
+
+const calculateContractsForOrder = ({
+  orderNumber,
+  bestContracts,
+  totalOrders,
+  priceScale,
+}: {
+  orderNumber: number
+  bestContracts: number
+  totalOrders: number
+  priceScale: PriceScale
+}): number => {
+  switch (priceScale) {
+    case "equal":
+      return bestContracts
+    case "linear":
+      return Math.max(
+        1,
+        Math.round((bestContracts * (orderNumber + 1)) / totalOrders)
+      )
+    case "reverse-linear":
+      return Math.max(
+        1,
+        Math.round((bestContracts * (totalOrders - orderNumber)) / totalOrders)
+      )
+    default:
+      return bestContracts
+  }
 }
 
 // Helper to calculate total notional for a given base contract size
@@ -234,6 +237,32 @@ const findBestContracts = (params: {
   return bestContracts
 }
 
+// Calculate price for an order considering price increment
+const calculatePrice = ({
+  orderNumber,
+  startPrice,
+  priceStep,
+  isBuying,
+  priceIncrement,
+}: {
+  orderNumber: number
+  startPrice: number
+  priceStep: number
+  isBuying: boolean
+  priceIncrement: number
+}): { price: number; precision: number } => {
+  const step = orderNumber * priceStep
+  const rawPrice = isBuying ? startPrice - step : startPrice + step
+  // Handle price calculation to conform to price increment
+  const precision =
+    priceIncrement < 1 ? -Math.floor(Math.log10(priceIncrement)) : 0
+  // Round price to nearest increment
+  const roundedPrice = Math.round(rawPrice / priceIncrement) * priceIncrement
+  // Format with appropriate decimal places
+  const price = Number(roundedPrice.toFixed(precision))
+  return { price, precision }
+}
+
 // Calculate details for each order in the ladder
 const calculateOrderDetails = ({
   orderNumber,
@@ -246,6 +275,7 @@ const calculateOrderDetails = ({
   leverage,
   feePerContract,
   totalOrders,
+  priceIncrement,
 }: {
   orderNumber: number
   startPrice: number
@@ -257,9 +287,15 @@ const calculateOrderDetails = ({
   leverage: number
   feePerContract: number
   totalOrders: number
+  priceIncrement: number
 }): OrderDetail => {
-  const step = orderNumber * priceStep
-  const price = isBuying ? startPrice - step : startPrice + step
+  const { price, precision } = calculatePrice({
+    orderNumber,
+    startPrice,
+    priceStep,
+    isBuying,
+    priceIncrement,
+  })
 
   const contracts = calculateContractsForOrder({
     orderNumber,
@@ -274,7 +310,7 @@ const calculateOrderDetails = ({
 
   const orderDetail: OrderDetail = {
     order: orderNumber + 1,
-    price: price.toFixed(2),
+    price: price.toFixed(precision),
     contracts,
     notionalValue: notionalValue.toFixed(2),
     marginRequired: marginRequired.toFixed(2),

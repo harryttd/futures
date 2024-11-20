@@ -165,6 +165,7 @@ export function LadderCalculator() {
             contractMultiplier: parseFloat(
               firstProduct.future_product_details?.contract_size
             ),
+            priceIncrement: parseFloat(firstProduct?.price_increment || "0"),
           }))
         }
       }
@@ -181,6 +182,7 @@ export function LadderCalculator() {
 
   const [params, setParams] = useState<LadderOrderParams>({
     startPrice: parseFloat(selectedProduct?.price || "0"),
+    endPrice: 0,
     percentageChange: -10,
     totalOrders: 5,
     priceScale: "reverse-linear",
@@ -190,6 +192,7 @@ export function LadderCalculator() {
     ),
     leverage: 5,
     feePerContract: 0.2,
+    priceIncrement: parseFloat(selectedProduct?.price_increment || "0"),
   })
 
   const [result, setResult] = useState<LadderOrderResult | null>(null)
@@ -261,14 +264,18 @@ export function LadderCalculator() {
                     const currentPrice = parseFloat(
                       product.price || params.startPrice.toString()
                     )
-                    handleInputChange("startPrice", currentPrice)
-                    handleInputChange(
-                      "contractMultiplier",
-                      parseFloat(
+                    setParams((prev) => ({
+                      ...prev,
+                      ...(product.price_increment && {
+                        priceIncrement: Number(product.price_increment),
+                      }),
+                      startPrice: currentPrice,
+                      contractMultiplier: parseFloat(
                         product.future_product_details?.contract_size || "0"
-                      )
-                    )
-                    // Set end price to -10% of start price
+                      ),
+                    }))
+                    // Set end price to -10% of start price. The startPrice gets
+                    // updated first above.
                     const newEndPrice = currentPrice * 0.9
                     handleEndPriceChange(newEndPrice)
                   }
