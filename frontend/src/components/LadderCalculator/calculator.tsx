@@ -51,7 +51,7 @@ export const calculateLadderOrders = (
   } = params
 
   const endPrice = percentageChange
-    ? calculateEndPrice(startPrice, percentageChange)
+    ? calculateEndPrice(startPrice, percentageChange, priceIncrement)
     : (initialEndPrice as number)
   const isBuying = endPrice < startPrice
   const priceStep = Math.abs(endPrice - startPrice) / (totalOrders - 1 || 1)
@@ -126,11 +126,14 @@ export const calculateLadderOrders = (
 }
 
 // Calculate end price if percentage change is provided
-const calculateEndPrice = (
+export const calculateEndPrice = (
   startPrice: number,
-  percentageChange: number
+  percentageChange: number,
+  priceIncrement: number
 ): number => {
-  return startPrice * (1 + percentageChange / 100)
+  const rawEndPrice = startPrice * (1 + percentageChange / 100)
+  // Round to nearest valid price increment
+  return Math.round(rawEndPrice / priceIncrement) * priceIncrement
 }
 
 // Use binary search to find the total contracts to approximate targetNotionalValue
@@ -327,7 +330,7 @@ const calculatePrice = ({
 }
 
 // Calculate percent difference between consecutive orders
-const calculatePercentDifference = (
+export const calculatePercentDifference = (
   previousPrice: number,
   currentPrice: number
 ): number => {

@@ -30,7 +30,11 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 
 import { useCoinbase } from "@/lib/coinbase-context"
-import { calculateLadderOrders } from "./calculator"
+import {
+  calculateEndPrice,
+  calculateLadderOrders,
+  calculatePercentDifference,
+} from "./calculator"
 import type {
   LadderOrderParams,
   LadderOrderResult,
@@ -206,18 +210,28 @@ export function LadderCalculator() {
   }
 
   const handleEndPriceChange = (value: number) => {
-    setParams((prev) => ({
-      ...prev,
-      endPrice: value,
-      percentageChange: ((value - prev.startPrice) / prev.startPrice) * 100,
-    }))
+    setParams((prev) => {
+      const percentDiff = Number(
+        calculatePercentDifference(prev.startPrice, value).toFixed(4)
+      )
+      return {
+        ...prev,
+        endPrice: value,
+        percentageChange: value < prev.startPrice ? -percentDiff : percentDiff,
+      }
+    })
   }
 
   const handlePercentageChange = (value: number) => {
+    const roundedEndPrice = calculateEndPrice(
+      params.startPrice,
+      value,
+      params.priceIncrement
+    )
     setParams((prev) => ({
       ...prev,
-      percentageChange: value,
-      endPrice: prev.startPrice * (1 + value / 100),
+      percentageChange: Number(value.toFixed(4)),
+      endPrice: roundedEndPrice,
     }))
   }
 
@@ -264,19 +278,21 @@ export function LadderCalculator() {
                     const currentPrice = parseFloat(
                       product.price || params.startPrice.toString()
                     )
+                    const priceIncrement = Number(product.price_increment)
                     setParams((prev) => ({
                       ...prev,
-                      ...(product.price_increment && {
-                        priceIncrement: Number(product.price_increment),
-                      }),
+                      ...(priceIncrement && { priceIncrement }),
                       startPrice: currentPrice,
                       contractMultiplier: parseFloat(
                         product.future_product_details?.contract_size || "0"
                       ),
                     }))
-                    // Set end price to -10% of start price. The startPrice gets
-                    // updated first above.
-                    const newEndPrice = currentPrice * 0.9
+                    // Set end price to -10% of start price
+                    const newEndPrice = calculateEndPrice(
+                      currentPrice,
+                      -10,
+                      priceIncrement
+                    )
                     handleEndPriceChange(newEndPrice)
                   }
                 }}
