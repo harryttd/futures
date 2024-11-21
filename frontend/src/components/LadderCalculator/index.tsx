@@ -275,7 +275,7 @@ export function LadderCalculator() {
   }
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
+    <div className="container mx-auto pl-0 pr-4 py-4 space-y-6">
       <div className="flex flex-col items-center mb-6 relative">
         <h1 className="text-3xl font-bold text-center mb-4">
           Trading Ladder Order Calculator
@@ -284,14 +284,14 @@ export function LadderCalculator() {
           <ModeToggle />
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
+      <div className="grid grid-cols-1 md:grid-cols-10 gap-6">
+        <Card className="col-start-1 col-end-4">
           <CardHeader>
             <CardTitle>Input Parameters</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label>Select Product</Label>
+          <CardContent className="space-y-3">
+            <div className="mb-4">
+              <Label className="mb-1.5">Select Product</Label>
               <Select
                 disabled={isLoading}
                 value={selectedProduct?.product_id}
@@ -343,7 +343,7 @@ export function LadderCalculator() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="startPrice">Start Price</Label>
                 <Input
@@ -367,9 +367,11 @@ export function LadderCalculator() {
                 />
               </div>
             </div>
-            <div>
-              <Label htmlFor="percentageChange">Percentage Change</Label>
-              <div className="flex">
+            <div className="col-span-2">
+              <Label htmlFor="percentageChange" className="mb-1.5">
+                Percentage Change
+              </Label>
+              <div className="flex gap-2">
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -401,95 +403,113 @@ export function LadderCalculator() {
                 />
               </div>
             </div>
-            <div>
-              <Label htmlFor="totalOrders">Number of Orders</Label>
-              <Input
-                id="totalOrders"
-                type="number"
-                min="1"
-                value={params.totalOrders}
-                onChange={(e) =>
-                  handleInputChange("totalOrders", parseInt(e.target.value))
-                }
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="totalOrders" className="mb-1.5">
+                  Number of Orders
+                </Label>
+                <Input
+                  id="totalOrders"
+                  type="number"
+                  min="1"
+                  value={params.totalOrders}
+                  onChange={(e) =>
+                    handleInputChange("totalOrders", parseInt(e.target.value))
+                  }
+                />
+              </div>
+              <div>
+                <Label className="mb-1.5">Scaling Type</Label>
+                <Select
+                  value={params.priceScale}
+                  onValueChange={(value: PriceScale) =>
+                    handleInputChange("priceScale", value)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="equal">Equal</SelectItem>
+                    <SelectItem value="linear">Linear</SelectItem>
+                    <SelectItem value="reverse-linear">
+                      Reverse Linear
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div>
-              <Label>Scaling Type</Label>
-              <Select
-                value={params.priceScale}
-                onValueChange={(value: PriceScale) =>
-                  handleInputChange("priceScale", value)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="equal">Equal</SelectItem>
-                  <SelectItem value="linear">Linear</SelectItem>
-                  <SelectItem value="reverse-linear">Reverse Linear</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="targetNotionalValue" className="mb-1.5">
+                  Target Notional
+                </Label>
+                <Input
+                  id="targetNotionalValue"
+                  type="number"
+                  value={params.targetNotionalValue}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "targetNotionalValue",
+                      parseFloat(e.target.value)
+                    )
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="contractMultiplier" className="mb-1.5">
+                  Contract Multiplier
+                </Label>
+                <Input
+                  id="contractMultiplier"
+                  type="number"
+                  value={params.contractMultiplier}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "contractMultiplier",
+                      parseFloat(e.target.value)
+                    )
+                  }
+                />
+              </div>
             </div>
-            <div>
-              <Label htmlFor="targetNotionalValue">Target Notional Value</Label>
-              <Input
-                id="targetNotionalValue"
-                type="number"
-                value={params.targetNotionalValue}
-                onChange={(e) =>
-                  handleInputChange(
-                    "targetNotionalValue",
-                    parseFloat(e.target.value)
-                  )
-                }
-              />
-            </div>
-            <div>
-              <Label htmlFor="contractMultiplier">Contract Multiplier</Label>
-              <Input
-                id="contractMultiplier"
-                type="number"
-                value={params.contractMultiplier}
-                onChange={(e) =>
-                  handleInputChange(
-                    "contractMultiplier",
-                    parseFloat(e.target.value)
-                  )
-                }
-              />
-            </div>
-            <div>
-              <Label htmlFor="leverage">Leverage</Label>
-              <Input
-                id="leverage"
-                type="number"
-                value={params.leverage}
-                onChange={(e) =>
-                  handleInputChange("leverage", parseFloat(e.target.value))
-                }
-              />
-            </div>
-            <div>
-              <Label htmlFor="feePerContract">Fee per Contract</Label>
-              <Input
-                id="feePerContract"
-                type="number"
-                value={params.feePerContract}
-                onChange={(e) =>
-                  handleInputChange(
-                    "feePerContract",
-                    parseFloat(e.target.value)
-                  )
-                }
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="leverage" className="mb-1.5">
+                  Leverage
+                </Label>
+                <Input
+                  id="leverage"
+                  type="number"
+                  value={params.leverage}
+                  onChange={(e) =>
+                    handleInputChange("leverage", parseFloat(e.target.value))
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="feePerContract" className="mb-1.5">
+                  Fee per Contract
+                </Label>
+                <Input
+                  id="feePerContract"
+                  type="number"
+                  value={params.feePerContract}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "feePerContract",
+                      parseFloat(e.target.value)
+                    )
+                  }
+                />
+              </div>
             </div>
             <Button onClick={handleCalculate} className="w-full">
               Calculate
             </Button>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="col-span-7">
           <CardHeader>
             <CardTitle>Ladder Order Details</CardTitle>
           </CardHeader>
@@ -543,10 +563,21 @@ export function LadderCalculator() {
                     <TableCell>{result.avgPercentDiff}%</TableCell>
                     <TableCell>-</TableCell>
                     <TableCell>
-                      {result.orders.reduce((sum, order) => sum + Number(order.previewMarginTotal || 0), 0).toFixed(2)}
+                      {result.orders
+                        .reduce(
+                          (sum, order) =>
+                            sum + Number(order.previewMarginTotal || 0),
+                          0
+                        )
+                        .toFixed(2)}
                     </TableCell>
                     <TableCell>
-                      {result.orders.reduce((sum, order) => sum + Number(order.previewFees || 0), 0).toFixed(2)}
+                      {result.orders
+                        .reduce(
+                          (sum, order) => sum + Number(order.previewFees || 0),
+                          0
+                        )
+                        .toFixed(2)}
                     </TableCell>
                   </TableRow>
                   <TableRow>
