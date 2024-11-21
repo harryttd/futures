@@ -203,6 +203,7 @@ export function LadderCalculator() {
 
   const [result, setResult] = useState<LadderOrderResult | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [isCalculating, setIsCalculating] = useState(false)
 
   const handleInputChange = (
     key: keyof LadderOrderParams,
@@ -239,6 +240,7 @@ export function LadderCalculator() {
 
   const handleCalculate = async () => {
     setError(null)
+    setIsCalculating(true)
     try {
       const calculatedResult = calculateLadderOrders(params)
       if (selectedProduct) {
@@ -285,6 +287,8 @@ export function LadderCalculator() {
       setError(
         "An error occurred during calculation. Please check your inputs and try again."
       )
+    } finally {
+      setIsCalculating(false)
     }
   }
 
@@ -518,8 +522,12 @@ export function LadderCalculator() {
                 />
               </div>
             </div>
-            <Button onClick={handleCalculate} className="w-full">
-              Calculate
+            <Button 
+              onClick={handleCalculate} 
+              className="w-full"
+              disabled={isCalculating}
+            >
+              {isCalculating ? "Calculating..." : "Calculate"}
             </Button>
           </CardContent>
         </Card>
