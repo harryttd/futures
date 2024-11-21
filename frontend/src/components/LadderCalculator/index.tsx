@@ -242,27 +242,37 @@ export function LadderCalculator() {
     try {
       const calculatedResult = calculateLadderOrders(params)
       const isShort = params.endPrice! < params.startPrice
-      const previewPromises = calculatedResult.orders.map(order =>
-        coinbaseClient.previewOrder({
-          productId: selectedProduct?.product_id || "",
-          side: isShort ? OrderSide.SELL : OrderSide.BUY,
-          orderConfiguration: {
-            stop_limit_stop_limit_gtc: {
-              baseSize: order.contracts.toString(),
-              limitPrice: order.price,
-              stopPrice: order.price,
-              stopDirection: isShort ? StopDirection.DOWN : StopDirection.UP
+      const previewPromises = calculatedResult.orders.map((order) =>
+        coinbaseClient
+          .previewOrder({
+            productId: selectedProduct?.product_id || "",
+            side: isShort ? OrderSide.SELL : OrderSide.BUY,
+            orderConfiguration: {
+              stop_limit_stop_limit_gtc: {
+                baseSize: order.contracts.toString(),
+                limitPrice: order.price,
+                stopPrice: order.price,
+                stopDirection: isShort ? StopDirection.DOWN : StopDirection.UP,
+              },
+            },
+          })
+          .then((preview) => {
+            order.previewLeverage = Number(preview?.leverage).toFixed(2)
+            order.previewMarginTotal = preview.order_margin_total
+            order.previewFees = preview.commission_total
+            if (preview.errs.length) {
+              order.previewErrors = preview.errs
             }
-          }
-        })
-        .then(preview => {
-          order.previewLeverage = Number(preview?.leverage).toFixed(2)
-          order.previewMarginTotal = preview.order_margin_total
-          order.previewFees = preview.commission_total
-        })
-        .catch(previewErr => {
-          console.error(`Preview failed for order ${order.order}:`, previewErr)
-        })
+            if (preview.warning.length) {
+              order.previewWarnings = preview.warning
+            }
+          })
+          .catch((previewErr) => {
+            console.error(
+              `Preview failed for order ${order.order}:`,
+              previewErr
+            )
+          })
       )
 
       await Promise.all(previewPromises)
@@ -584,6 +594,32 @@ export function LadderCalculator() {
                     <TableCell colSpan={2}>Break-even Price</TableCell>
                     <TableCell>{result.breakEvenPrice}</TableCell>
                   </TableRow>
+                  {result.orders.some(
+                    (order) => order.previewErrors || order.previewWarnings
+                  ) && (
+                    <TableRow>
+                      <TableCell colSpan={10}>
+                        <div className="space-y-2">
+                          {result.orders.map((order, idx) => (
+                            <div key={idx}>
+                              {order.previewErrors && (
+                                <div className="text-destructive bg-destructive/10 p-2 rounded">
+                                  Order {order.order} Errors:{" "}
+                                  {order.previewErrors.join(", ")}
+                                </div>
+                              )}
+                              {order.previewWarnings && (
+                                <div className="text-yellow-600 dark:text-yellow-500 bg-yellow-100 dark:bg-yellow-900/20 p-2 rounded mt-1">
+                                  Order {order.order} Warnings:{" "}
+                                  {order.previewWarnings.join(", ")}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             )}

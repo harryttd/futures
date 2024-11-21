@@ -24,6 +24,8 @@ interface OrderDetail {
   previewLeverage?: string
   previewMarginTotal?: string
   previewFees?: string
+  previewErrors?: string[]
+  previewWarnings?: string[]
 }
 
 export interface LadderOrderResult {
