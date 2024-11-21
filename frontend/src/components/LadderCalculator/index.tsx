@@ -241,41 +241,45 @@ export function LadderCalculator() {
     setError(null)
     try {
       const calculatedResult = calculateLadderOrders(params)
-      const isShort = params.endPrice! < params.startPrice
-      const previewPromises = calculatedResult.orders.map((order) =>
-        coinbaseClient
-          .previewOrder({
-            productId: selectedProduct?.product_id || "",
-            side: isShort ? OrderSide.SELL : OrderSide.BUY,
-            orderConfiguration: {
-              stop_limit_stop_limit_gtc: {
-                baseSize: order.contracts.toString(),
-                limitPrice: order.price,
-                stopPrice: order.price,
-                stopDirection: isShort ? StopDirection.DOWN : StopDirection.UP,
+      if (selectedProduct) {
+        const isShort = params.endPrice! < params.startPrice
+        const previewPromises = calculatedResult.orders.map((order) =>
+          coinbaseClient
+            .previewOrder({
+              productId: selectedProduct.product_id,
+              side: isShort ? OrderSide.SELL : OrderSide.BUY,
+              orderConfiguration: {
+                stop_limit_stop_limit_gtc: {
+                  baseSize: order.contracts.toString(),
+                  limitPrice: order.price,
+                  stopPrice: order.price,
+                  stopDirection: isShort
+                    ? StopDirection.DOWN
+                    : StopDirection.UP,
+                },
               },
-            },
-          })
-          .then((preview) => {
-            order.previewLeverage = Number(preview?.leverage).toFixed(2)
-            order.previewMarginTotal = preview.order_margin_total
-            order.previewFees = preview.commission_total
-            if (preview.errs.length) {
-              order.previewErrors = preview.errs
-            }
-            if (preview.warning.length) {
-              order.previewWarnings = preview.warning
-            }
-          })
-          .catch((previewErr) => {
-            console.error(
-              `Preview failed for order ${order.order}:`,
-              previewErr
-            )
-          })
-      )
-
-      await Promise.all(previewPromises)
+            })
+            .then((preview) => {
+              order.previewLeverage = Number(preview?.leverage).toFixed(2)
+              order.previewMarginTotal = preview.order_margin_total
+              order.previewFees = preview.commission_total
+              if (preview.errs.length) {
+                order.previewErrors = preview.errs
+              }
+              if (preview.warning.length) {
+                order.previewWarnings = preview.warning
+              }
+            })
+            .catch((previewErr) => {
+              console.error(
+                `Preview failed for order ${order.order}:`,
+                previewErr
+              )
+              order.previewErrors = [previewErr]
+            })
+        )
+        await Promise.all(previewPromises)
+      }
       setResult(calculatedResult)
     } catch (err) {
       setError(
