@@ -5,6 +5,7 @@ import {
   ContractExpiryType,
   ExpiringContractStatus,
   OrderSide,
+  StopDirection,
 } from "@coinbase/sdk"
 
 import { Button } from "@/components/ui/button"
@@ -240,18 +241,17 @@ export function LadderCalculator() {
     setError(null)
     try {
       const calculatedResult = calculateLadderOrders(params)
-
-      // Preview all orders in parallel
       const isShort = params.endPrice! < params.startPrice
       const previewPromises = calculatedResult.orders.map(order =>
         coinbaseClient.previewOrder({
           productId: selectedProduct?.product_id || "",
           side: isShort ? OrderSide.SELL : OrderSide.BUY,
           orderConfiguration: {
-            limit_limit_gtc: {
+            stop_limit_stop_limit_gtc: {
               baseSize: order.contracts.toString(),
               limitPrice: order.price,
-              postOnly: true
+              stopPrice: order.price,
+              stopDirection: isShort ? StopDirection.DOWN : StopDirection.UP
             }
           }
         })
