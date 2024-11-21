@@ -21,6 +21,9 @@ interface OrderDetail {
   marginRequired: string
   fees: string
   percentDiff?: string
+  previewLeverage?: string
+  previewMarginTotal?: string
+  previewFees?: string
 }
 
 export interface LadderOrderResult {

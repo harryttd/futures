@@ -4,6 +4,7 @@ import {
   ProductType,
   ContractExpiryType,
   ExpiringContractStatus,
+  OrderSide,
 } from "@coinbase/sdk"
 
 import { Button } from "@/components/ui/button"
@@ -235,10 +236,36 @@ export function LadderCalculator() {
     }))
   }
 
-  const handleCalculate = () => {
+  const handleCalculate = async () => {
     setError(null)
     try {
       const calculatedResult = calculateLadderOrders(params)
+
+      // Preview all orders in parallel
+      const isShort = params.endPrice! < params.startPrice
+      const previewPromises = calculatedResult.orders.map(order =>
+        coinbaseClient.previewOrder({
+          productId: selectedProduct?.product_id || "",
+          side: isShort ? OrderSide.SELL : OrderSide.BUY,
+          orderConfiguration: {
+            limit_limit_gtc: {
+              baseSize: order.contracts.toString(),
+              limitPrice: order.price,
+              postOnly: true
+            }
+          }
+        })
+        .then(preview => {
+          order.previewLeverage = Number(preview?.leverage).toFixed(2)
+          order.previewMarginTotal = preview.order_margin_total
+          order.previewFees = preview.commission_total
+        })
+        .catch(previewErr => {
+          console.error(`Preview failed for order ${order.order}:`, previewErr)
+        })
+      )
+
+      await Promise.all(previewPromises)
       setResult(calculatedResult)
     } catch (err) {
       setError(
@@ -485,6 +512,9 @@ export function LadderCalculator() {
                     <TableHead>~Margin Required</TableHead>
                     <TableHead>~Fees</TableHead>
                     <TableHead>Price % Diff</TableHead>
+                    <TableHead>Preview Leverage</TableHead>
+                    <TableHead>Preview Margin</TableHead>
+                    <TableHead>Preview Fees</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -499,6 +529,9 @@ export function LadderCalculator() {
                       <TableCell>
                         {order.percentDiff ? `${order.percentDiff}%` : "-"}
                       </TableCell>
+                      <TableCell>{order.previewLeverage || "-"}</TableCell>
+                      <TableCell>{order.previewMarginTotal || "-"}</TableCell>
+                      <TableCell>{order.previewFees || "-"}</TableCell>
                     </TableRow>
                   ))}
                   <TableRow className="font-bold">
@@ -508,6 +541,13 @@ export function LadderCalculator() {
                     <TableCell>~{result.totalMarginRequired}</TableCell>
                     <TableCell>~{result.totalFees}</TableCell>
                     <TableCell>{result.avgPercentDiff}%</TableCell>
+                    <TableCell>-</TableCell>
+                    <TableCell>
+                      {result.orders.reduce((sum, order) => sum + Number(order.previewMarginTotal || 0), 0).toFixed(2)}
+                    </TableCell>
+                    <TableCell>
+                      {result.orders.reduce((sum, order) => sum + Number(order.previewFees || 0), 0).toFixed(2)}
+                    </TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell colSpan={2}>Break-even Price</TableCell>
