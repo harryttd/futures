@@ -166,7 +166,8 @@ export function LadderCalculator() {
           const currentPrice = parseFloat(firstProduct.price)
           setParams((prev) => ({
             ...prev,
-            startPrice: currentPrice,
+            // Offset start price by -3%
+            startPrice: currentPrice * 0.97,
             endPrice: currentPrice * 0.9,
             contractMultiplier: parseFloat(
               firstProduct.future_product_details?.contract_size
@@ -319,10 +320,8 @@ export function LadderCalculator() {
                   )
                   if (product) {
                     setSelectedProduct(product)
-                    // Update start price based on selected product
-                    const currentPrice = parseFloat(
-                      product.price || params.startPrice.toString()
-                    )
+                    // Offset start price by -3%
+                    const currentPrice = parseFloat(product.price) * 0.97
                     const priceIncrement = Number(product.price_increment)
                     setParams((prev) => ({
                       ...prev,
@@ -522,8 +521,8 @@ export function LadderCalculator() {
                 />
               </div>
             </div>
-            <Button 
-              onClick={handleCalculate} 
+            <Button
+              onClick={handleCalculate}
               className="w-full"
               disabled={isCalculating}
             >
