@@ -140,7 +140,24 @@ export function LadderCalculator() {
   const coinbaseClient = useCoinbase()
   const [products, setProducts] = useState<Product[]>([])
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [isCalculating, setIsCalculating] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [result, setResult] = useState<LadderOrderResult | null>(null)
+  const [params, setParams] = useState<LadderOrderParams>({
+    startPrice: parseFloat(selectedProduct?.price || "0"),
+    endPrice: 0,
+    percentageChange: -10,
+    totalOrders: 5,
+    priceScale: "reverse-linear",
+    targetNotionalValue: 20000,
+    contractMultiplier: parseFloat(
+      selectedProduct?.future_product_details?.contract_size || "0"
+    ),
+    leverage: 5,
+    feePerContract: 0.2,
+    priceIncrement: parseFloat(selectedProduct?.price_increment || "0"),
+  })
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -186,25 +203,6 @@ export function LadderCalculator() {
   useEffect(() => {
     fetchProducts()
   }, [fetchProducts])
-
-  const [params, setParams] = useState<LadderOrderParams>({
-    startPrice: parseFloat(selectedProduct?.price || "0"),
-    endPrice: 0,
-    percentageChange: -10,
-    totalOrders: 5,
-    priceScale: "reverse-linear",
-    targetNotionalValue: 20000,
-    contractMultiplier: parseFloat(
-      selectedProduct?.future_product_details?.contract_size || "0"
-    ),
-    leverage: 5,
-    feePerContract: 0.2,
-    priceIncrement: parseFloat(selectedProduct?.price_increment || "0"),
-  })
-
-  const [result, setResult] = useState<LadderOrderResult | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [isCalculating, setIsCalculating] = useState(false)
 
   const handleInputChange = (
     key: keyof LadderOrderParams,
@@ -254,8 +252,8 @@ export function LadderCalculator() {
               orderConfiguration: {
                 stop_limit_stop_limit_gtc: {
                   baseSize: order.contracts.toString(),
-                  limitPrice: order.price,
-                  stopPrice: order.price,
+                  limitPrice: String(order.price),
+                  stopPrice: String(order.price),
                   stopDirection: isShort
                     ? StopDirection.DOWN
                     : StopDirection.UP,
@@ -578,8 +576,12 @@ export function LadderCalculator() {
                   <TableRow className="font-bold">
                     <TableCell colSpan={2}>Totals</TableCell>
                     <TableCell>{result.totalContractsPurchased}</TableCell>
-                    <TableCell>{result.totalNotionalValue}</TableCell>
-                    <TableCell>~{result.totalMarginRequired}</TableCell>
+                    <TableCell>
+                      {Number(result.totalNotionalValue).toLocaleString()}
+                    </TableCell>
+                    <TableCell>
+                      ~{Number(result.totalMarginRequired).toLocaleString()}
+                    </TableCell>
                     <TableCell>~{result.totalFees}</TableCell>
                     <TableCell>{result.avgPercentDiff}%</TableCell>
                     <TableCell>-</TableCell>
@@ -590,7 +592,7 @@ export function LadderCalculator() {
                             sum + Number(order.previewMarginTotal || 0),
                           0
                         )
-                        .toFixed(2)}
+                        .toLocaleString()}
                     </TableCell>
                     <TableCell>
                       {result.orders

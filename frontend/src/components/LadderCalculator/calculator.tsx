@@ -15,12 +15,12 @@ export interface LadderOrderParams {
 
 interface OrderDetail {
   order: number
-  price: string
+  price: number
   contracts: number
-  notionalValue: string
-  marginRequired: string
-  fees: string
-  percentDiff?: string
+  notionalValue: number
+  marginRequired: number
+  fees: number
+  percentDiff?: number
   previewLeverage?: string
   previewMarginTotal?: string
   previewFees?: string
@@ -30,12 +30,12 @@ interface OrderDetail {
 
 export interface LadderOrderResult {
   orders: OrderDetail[]
-  totalNotionalValue: string
-  totalMarginRequired: string
-  avgPercentDiff: string
+  totalNotionalValue: number
+  totalMarginRequired: number
+  avgPercentDiff: number
   totalContractsPurchased: number
-  totalFees: string
-  breakEvenPrice: string
+  totalFees: number
+  breakEvenPrice: number
 }
 
 // Main function to calculate ladder orders
@@ -96,15 +96,15 @@ export const calculateLadderOrders = (
     })
 
     orders.push(order)
-    totalNotionalValue += parseFloat(order.notionalValue)
-    totalMarginRequired += parseFloat(order.marginRequired)
+    totalNotionalValue += order.notionalValue
+    totalMarginRequired += order.marginRequired
     totalContractsPurchased += order.contracts
-    totalFees += parseFloat(order.fees)
+    totalFees += order.fees
 
     if (orderNumber > 0) {
       percentDiffSum += calculatePercentDifference(
-        parseFloat(orders[orderNumber - 1].price),
-        parseFloat(order.price)
+        (orders[orderNumber - 1].price),
+        (order.price)
       )
     }
   }
@@ -121,12 +121,12 @@ export const calculateLadderOrders = (
 
   return {
     orders,
-    totalNotionalValue: totalNotionalValue.toFixed(2),
-    totalMarginRequired: totalMarginRequired.toFixed(2),
-    avgPercentDiff: avgPercentDiff.toFixed(2),
+    totalNotionalValue: Number(totalNotionalValue.toFixed(2)),
+    totalMarginRequired: Number(totalMarginRequired.toFixed(2)),
+    avgPercentDiff: Number(avgPercentDiff.toFixed(2)),
     totalContractsPurchased,
-    totalFees: totalFees.toFixed(2),
-    breakEvenPrice: breakEvenPrice.toFixed(2),
+    totalFees: Number(totalFees.toFixed(2)),
+    breakEvenPrice: Number(breakEvenPrice.toFixed(2)),
   }
 }
 
@@ -292,17 +292,17 @@ const calculateOrderDetails = ({
 
   const orderDetail: OrderDetail = {
     order: orderNumber + 1,
-    price: price.toFixed(precision),
+    price: Number(price.toFixed(precision)),
     contracts,
-    notionalValue: notionalValue.toFixed(2),
-    marginRequired: marginRequired.toFixed(2),
-    fees: fees.toFixed(2),
+    notionalValue: Number(notionalValue.toFixed(2)),
+    marginRequired: Number(marginRequired.toFixed(2)),
+    fees: Number(fees.toFixed(2)),
   }
 
   if (orderNumber > 0) {
     const prevPrice = isBuying ? price + priceStep : price - priceStep
     const percentDiff = calculatePercentDifference(prevPrice, price)
-    orderDetail.percentDiff = percentDiff.toFixed(2)
+    orderDetail.percentDiff = Number(percentDiff.toFixed(2))
   }
 
   return orderDetail
@@ -349,7 +349,7 @@ const calculateBreakEvenPrice = (
 ): number => {
   return (
     orders.reduce((acc, order) => {
-      return acc + parseFloat(order.price) * order.contracts
+      return acc + order.price * order.contracts
     }, 0) / totalContractsPurchased
   )
 }
