@@ -48,9 +48,9 @@ app.all("/", async (req: Request, res: Response) => {
 
   try {
     const response = await coinbaseClient[
-      method as Exclude<keyof RESTClient, keyof RESTBase>
+      method as Exclude<keyof RESTClient, keyof RESTBase> | 'getJWTforWS'
     ](params)
-    console.log(response)
+    // console.log(response)
     res.status(200).send(response)
     return
   } catch (error: unknown) {

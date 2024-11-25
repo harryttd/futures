@@ -1,13 +1,48 @@
-import { BrowserRESTClient } from "@coinbase/sdk"
-import { createContext, useContext, ReactNode } from "react"
+import {
+  createContext,
+  useContext,
+  ReactNode,
+  useEffect,
+  useState,
+} from "react"
+import {
+  BrowserRESTClient,
+  WebSocketClient,
+  WebSocketChannelName,
+  WebSocketEvent,
+} from "@coinbase/sdk"
 
-const client = new BrowserRESTClient()
+interface CoinbaseContextType {
+  restClient: BrowserRESTClient
+  wsClient: WebSocketClient | null
+}
 
-const CoinbaseContext = createContext<BrowserRESTClient | undefined>(undefined)
+const restClient = new BrowserRESTClient()
+const CoinbaseContext = createContext<CoinbaseContextType | undefined>(
+  undefined
+)
 
 export function CoinbaseProvider({ children }: { children: ReactNode }) {
+  const [wsClient, setWsClient] = useState<WebSocketClient | null>(null)
+
+  useEffect(() => {
+    const ws = new WebSocketClient(restClient)
+    ws.on(WebSocketEvent.ON_OPEN, () => {
+      console.log("WebSocket connected, subscribing to heartbeats")
+      ws.subscribe({
+        channel: WebSocketChannelName.HEARTBEAT,
+      })
+    })
+    ws.connect()
+    setWsClient(ws)
+
+    return () => {
+      ws.disconnect("Component unmounting")
+    }
+  }, [])
+
   return (
-    <CoinbaseContext.Provider value={client}>
+    <CoinbaseContext.Provider value={{ restClient, wsClient }}>
       {children}
     </CoinbaseContext.Provider>
   )
