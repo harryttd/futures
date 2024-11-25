@@ -1,7 +1,7 @@
 import "dotenv/config"
 import express, { Request, Response } from "express"
 
-import { RESTClient, generateWSToken, CoinbaseError } from "@coinbase/sdk"
+import { RESTClient, CoinbaseError } from "@coinbase/sdk"
 import type { RESTBase } from "@coinbase/sdk/src/rest/rest-base"
 
 const app = express()
@@ -27,19 +27,6 @@ app.use((req, res, next) => {
 })
 
 app.use(express.json())
-app.get("/auth", async (req: Request, res: Response) => {
-  try {
-    // Get JWT token from client
-    const token = generateWSToken(
-      process.env.CB_API_KEY_ID!,
-      process.env.CP_API_KEY_SECRET!
-    )
-    res.json({ token })
-  } catch (error) {
-    console.error("Error getting auth token:", error)
-    res.status(500).json({ error: "Failed to get auth token" })
-  }
-})
 
 app.all("/", async (req: Request, res: Response) => {
   const { body } = req
@@ -48,7 +35,7 @@ app.all("/", async (req: Request, res: Response) => {
 
   try {
     const response = await coinbaseClient[
-      method as Exclude<keyof RESTClient, keyof RESTBase> | 'getJWTforWS'
+      method as Exclude<keyof RESTClient, keyof RESTBase> | "getJWTforWS"
     ](params)
     // console.log(response)
     res.status(200).send(response)
